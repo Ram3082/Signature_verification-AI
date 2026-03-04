@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>History — SigVerify</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body { overflow-y:auto; align-items:flex-start; padding:80px 16px 40px; }
+    #particles-bg { position:fixed; inset:0; width:100%; height:100%; z-index:0;
+      background:radial-gradient(ellipse at 60% 40%,#1a0533 0%,#0a0a0f 50%,#001a2e 100%); }
+    .top-nav { position:fixed; top:0; left:0; right:0; z-index:100;
+      display:flex; justify-content:space-between; align-items:center; padding:14px 28px;
+      background:rgba(0,0,0,.35); backdrop-filter:blur(16px); border-bottom:1px solid rgba(255,255,255,.07); }
+    .nav-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; color:white; }
+    .page-wrapper { position:relative; z-index:10; width:100%; max-width:800px; margin:0 auto; }
+    .g-card { background:rgba(255,255,255,.045); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,.09);
+      border-radius:20px; padding:28px 24px; margin-bottom:18px;
+      box-shadow:0 24px 48px rgba(0,0,0,.5); animation:cardIn .65s cubic-bezier(.16,1,.3,1) both; }
+    .sec-title { font-family:'Syne',sans-serif; font-size:.65rem; font-weight:700;
+      letter-spacing:.13em; text-transform:uppercase; color:rgba(255,255,255,.3); margin-bottom:14px; }
+    .hist-row { display:flex; align-items:center; gap:14px; padding:14px 0;
+      border-bottom:1px solid rgba(255,255,255,.06); }
+    .hist-row:last-child { border-bottom:none; }
+    .hist-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center;
+      justify-content:center; font-size:18px; flex-shrink:0; }
+    .hist-icon.original { background:rgba(74,222,128,.12); border:1px solid rgba(74,222,128,.25); }
+    .hist-icon.forged   { background:rgba(248,113,113,.12); border:1px solid rgba(248,113,113,.25); }
+    .hist-name { font-family:'Syne',sans-serif; font-weight:700; font-size:13px; color:white; }
+    .hist-meta { font-size:11px; color:rgba(255,255,255,.35); margin-top:2px; }
+    .hist-result { margin-left:auto; text-align:right; }
+    .hist-result .verdict { font-family:'Syne',sans-serif; font-size:12px; font-weight:800; }
+    .hist-result .verdict.original { color:#4ade80; }
+    .hist-result .verdict.forged   { color:#f87171; }
+    .hist-result .conf { font-size:11px; color:rgba(255,255,255,.35); }
+    .empty-state { text-align:center; padding:40px 20px; color:rgba(255,255,255,.3);
+      font-family:'Syne',sans-serif; font-size:14px; }
+    .stat-row { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+    .stat-box { flex:1; min-width:100px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+      border-radius:12px; padding:14px 12px; text-align:center; }
+    .stat-box .sv { font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; color:white; }
+    .stat-box .sl { font-size:10px; color:rgba(255,255,255,.32); text-transform:uppercase; letter-spacing:.07em; }
+  </style>
+</head>
+<body>
+  <div id="particles-bg"></div>
+
+  <nav class="top-nav">
+    <span class="nav-logo">⬡ SigVerify</span>
+    <div style="display:flex;gap:10px;">
+      <a href="/"       class="btn btn-outline-light" style="padding:6px 14px;font-size:13px;">Home</a>
+      <a href="/logout" class="btn btn-outline-light" style="padding:6px 14px;font-size:13px;">Logout</a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="g-card">
+      <h2 style="margin-bottom:4px;">Verification History</h2>
+      <p style="color:rgba(255,255,255,.35);font-size:13px;margin-bottom:24px;">{{ user_name }}'s past verifications</p>
+
+      {% if history %}
+        <!-- Stats -->
+        {% set total    = history|length %}
+        {% set originals = history|selectattr('result','equalto','Original Signature')|list|length %}
+        {% set forged    = total - originals %}
+        <div class="stat-row">
+          <div class="stat-box"><div class="sv">{{ total }}</div><div class="sl">Total</div></div>
+          <div class="stat-box"><div class="sv" style="color:#4ade80;">{{ originals }}</div><div class="sl">Original</div></div>
+          <div class="stat-box"><div class="sv" style="color:#f87171;">{{ forged }}</div><div class="sl">Forged</div></div>
+        </div>
+
+        <p class="sec-title">Recent Verifications</p>
+
+        {% for row in history %}
+          {% set cls = 'original' if row.result == 'Original Signature' else 'forged' %}
+          <div class="hist-row">
+            <div class="hist-icon {{ cls }}">
+              {{ '✅' if cls=='original' else '⚠️' }}
+            </div>
+            <div>
+              <div class="hist-name">{{ row.filename }}</div>
+              <div class="hist-meta">{{ row.model_used }} &nbsp;·&nbsp; {{ row.timestamp }}</div>
+            </div>
+            <div class="hist-result">
+              <div class="verdict {{ cls }}">{{ row.result }}</div>
+              <div class="conf">{{ row.confidence }}% confidence</div>
+            </div>
+          </div>
+        {% endfor %}
+
+      {% else %}
+        <div class="empty-state">
+          📭 No verifications yet.<br>
+          <a href="/" style="color:#c96287;margin-top:10px;display:inline-block;">Upload your first signature →</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles-slim@2.12.0/tsparticles.slim.bundle.min.js"></script>
+  <script>
+    tsParticles.load("particles-bg",{fullScreen:{enable:false},background:{color:{value:"transparent"}},fpsLimit:60,
+      particles:{number:{value:100,density:{enable:true,area:900}},color:{value:["#ffffff","#c96287","#60a5fa"]},
+        shape:{type:"circle"},opacity:{value:{min:.07,max:.6},animation:{enable:true,speed:1,sync:false}},
+        size:{value:{min:.5,max:2}},move:{enable:true,speed:{min:.1,max:.5},random:true,outModes:{default:"out"}},
+        twinkle:{particles:{enable:true,frequency:.05,opacity:1}}},detectRetina:true});
+  </script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verification Result — SigVerify</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    body{overflow-y:auto;align-items:flex-start;padding:80px 16px 40px;}
+    #particles-bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;
+      background:radial-gradient(ellipse at 30% 30%,#1a0533 0%,#0a0a0f 50%,#001a2e 100%);}
+    .top-nav{position:fixed;top:0;left:0;right:0;z-index:100;
+      display:flex;justify-content:space-between;align-items:center;padding:14px 28px;
+      background:rgba(0,0,0,.35);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.07);}
+    .nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:white;}
+    .page-wrapper{position:relative;z-index:10;width:100%;max-width:940px;margin:0 auto;}
+    .g-card{background:rgba(255,255,255,.045);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+      border:1px solid rgba(255,255,255,.09);border-radius:20px;padding:28px 24px;margin-bottom:18px;
+      animation:cardIn .65s cubic-bezier(.16,1,.3,1) both;box-shadow:0 24px 48px rgba(0,0,0,.5);}
+    .sec-title{font-family:'Syne',sans-serif;font-size:.65rem;font-weight:700;
+      letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:14px;}
+    .verdict-badge{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:999px;
+      font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;margin:10px 0;}
+    .verdict-badge.original{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.35);color:#4ade80;}
+    .verdict-badge.forged{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.35);color:#f87171;}
+    .conf-bar{height:7px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:18px;}
+    .conf-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#c96287,#cc7d23);}
+    .sig-img{width:100%;max-width:180px;border-radius:12px;border:1px solid rgba(255,255,255,.1);display:block;}
+
+    /* ── Grad-CAM panel ── */
+    .gradcam-panel{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+    @media(max-width:500px){.gradcam-panel{grid-template-columns:1fr;}}
+    .gradcam-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;padding:16px;text-align:center;}
+    .gradcam-box img{width:100%;max-width:200px;border-radius:10px;border:1px solid rgba(255,255,255,.1);}
+    .gradcam-badge{display:inline-block;margin-top:10px;padding:5px 12px;border-radius:999px;
+      font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+      background:rgba(201,98,135,.15);border:1px solid rgba(201,98,135,.35);color:#c96287;}
+    .cnn-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;
+      font-size:11px;font-weight:700;background:rgba(96,165,250,.12);
+      border:1px solid rgba(96,165,250,.35);color:#60a5fa;margin-bottom:10px;}
+
+    .stats-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+    .stat-pill{flex:1;min-width:90px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+      border-radius:12px;padding:12px 10px;text-align:center;}
+    .stat-pill .sv{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:white;}
+    .stat-pill .sl{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.07em;margin-top:2px;}
+    .metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:18px;}
+    @media(max-width:520px){.metrics-grid{grid-template-columns:repeat(2,1fr);}}
+    .m-tile{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 12px 12px;text-align:center;}
+    .m-tile .val{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:800;letter-spacing:-.03em;line-height:1;
+      background:linear-gradient(135deg,#fff 30%,rgba(255,255,255,.4));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .m-tile .lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.32);margin-top:4px;}
+    .m-tile .bw{height:4px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:8px;}
+    .m-tile .bf{height:100%;border-radius:999px;background:linear-gradient(90deg,#c96287,#cc7d23);}
+    .cmp-table{width:100%;border-collapse:separate;border-spacing:0 6px;}
+    .cmp-table th{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.3);padding:6px 10px;}
+    .cmp-table td{padding:12px 10px;font-size:13px;color:rgba(255,255,255,.8);background:rgba(255,255,255,.03);
+      border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);}
+    .cmp-table td:first-child{border-left:1px solid rgba(255,255,255,.06);border-radius:10px 0 0 10px;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;}
+    .cmp-table td:last-child{border-right:1px solid rgba(255,255,255,.06);border-radius:0 10px 10px 0;}
+    .cmp-table tr.best-row td{background:rgba(201,98,135,.10);border-color:rgba(201,98,135,.2);}
+    .cmp-table tr.best-row td:first-child{border-left-color:rgba(201,98,135,.4);}
+    .badge-best{background:rgba(201,98,135,.2);color:#c96287;border:1px solid rgba(201,98,135,.4);border-radius:6px;padding:2px 7px;font-size:10px;margin-left:6px;}
+    .cm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:280px;margin:0 auto;}
+    .cm-cell{border-radius:12px;padding:18px 10px;text-align:center;}
+    .cm-cell.tp{background:rgba(74,222,128,.14);border:1px solid rgba(74,222,128,.3);}
+    .cm-cell.tn{background:rgba(96,165,250,.14);border:1px solid rgba(96,165,250,.3);}
+    .cm-cell.fp{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);}
+    .cm-cell.fn{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);}
+    .cm-cell .num{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;line-height:1;}
+    .cm-cell.tp .num{color:#4ade80;}.cm-cell.tn .num{color:#60a5fa;}
+    .cm-cell.fp .num{color:#f87171;}.cm-cell.fn .num{color:#fbbf24;}
+    .cm-cell .tag{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-top:4px;}
+    .cm-axis{display:flex;justify-content:space-around;font-size:10px;color:rgba(255,255,255,.25);margin-bottom:6px;}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    @media(max-width:600px){.two-col{grid-template-columns:1fr;}}
+    .chart-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px 16px;margin-bottom:16px;}
+    .chart-card canvas{max-height:260px;}
+  </style>
+</head>
+<body>
+  <div id="particles-bg"></div>
+
+  <nav class="top-nav">
+    <span class="nav-logo">⬡ SigVerify</span>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <span style="font-size:13px;color:rgba(255,255,255,.45);">{{ user_name }}</span>
+      <a href="/history" class="btn btn-outline-light" style="padding:6px 14px;font-size:13px;">History</a>
+      <a href="/"        class="btn btn-outline-light" style="padding:6px 14px;font-size:13px;">Home</a>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+
+    <!-- ══ VERDICT ══ -->
+    <div class="g-card">
+      {% if model_name == 'CNN' %}
+      <div class="cnn-badge">🧠 Powered by Deep Learning CNN</div>
+      {% endif %}
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <img src="{{ img_path }}" class="sig-img" alt="signature">
+        <div style="flex:1;min-width:200px;">
+          <p class="sec-title" style="margin-bottom:4px;">Prediction — {{ model_name }}</p>
+          <div class="verdict-badge {{ result_cls }}">
+            {% if result_cls=='original' %}✅{% else %}⚠️{% endif %}
+            {{ prediction }}
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,.38);margin-bottom:5px;">
+            <span>Model Confidence</span><span>{{ confidence }}%</span>
+          </div>
+          <div class="conf-bar"><div class="conf-fill" style="width:{{ confidence }}%"></div></div>
+          <a href="/" class="gradient-button" style="display:inline-flex;text-decoration:none;width:100%;">Try Another Image</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ GRAD-CAM ══ -->
+    {% if gradcam_path %}
+    <div class="g-card">
+      <p class="sec-title">🔍 Explainable AI — Grad-CAM Heatmap</p>
+      <p style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:16px;">
+        The heatmap shows <strong style="color:rgba(255,255,255,.7);">which regions of the signature</strong>
+        the CNN focused on to make its decision. Red/yellow = high attention, blue = low attention.
+      </p>
+      <div class="gradcam-panel">
+        <div class="gradcam-box">
+          <p class="sec-title" style="margin-bottom:8px;">Original Upload</p>
+          <img src="{{ img_path }}" alt="original">
+        </div>
+        <div class="gradcam-box">
+          <p class="sec-title" style="margin-bottom:8px;">Grad-CAM Heatmap</p>
+          <img src="{{ gradcam_path }}" alt="gradcam heatmap">
+          <div class="gradcam-badge">CNN Attention Map</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ══ DATASET ══ -->
+    <p class="sec-title">Dataset Overview</p>
+    <div class="stats-row">
+      <div class="stat-pill"><div class="sv">{{ metrics.total_samples }}</div><div class="sl">Total</div></div>
+      <div class="stat-pill"><div class="sv">{{ metrics.train_samples }}</div><div class="sl">Train</div></div>
+      <div class="stat-pill"><div class="sv">{{ metrics.test_samples }}</div><div class="sl">Test</div></div>
+      <div class="stat-pill"><div class="sv" style="color:#4ade80;">{{ metrics.original_count }}</div><div class="sl">Original</div></div>
+      <div class="stat-pill"><div class="sv" style="color:#f87171;">{{ metrics.forged_count }}</div><div class="sl">Forged</div></div>
+    </div>
+
+    <!-- ══ BEST MODEL TILES ══ -->
+    <p class="sec-title">Best Model — {{ metrics.best_short }} ({{ metrics.best_model }})</p>
+    <div class="metrics-grid">
+      <div class="m-tile"><div class="val">{{ metrics.accuracy }}%</div><div class="lbl">Accuracy</div><div class="bw"><div class="bf" style="width:{{ metrics.accuracy }}%"></div></div></div>
+      <div class="m-tile"><div class="val">{{ metrics.precision }}%</div><div class="lbl">Precision</div><div class="bw"><div class="bf" style="width:{{ metrics.precision }}%"></div></div></div>
+      <div class="m-tile"><div class="val">{{ metrics.recall }}%</div><div class="lbl">Recall</div><div class="bw"><div class="bf" style="width:{{ metrics.recall }}%"></div></div></div>
+      <div class="m-tile"><div class="val">{{ metrics.f1 }}%</div><div class="lbl">F1 Score</div><div class="bw"><div class="bf" style="width:{{ metrics.f1 }}%"></div></div></div>
+      <div class="m-tile"><div class="val">{{ metrics.sensitivity }}%</div><div class="lbl">Sensitivity</div><div class="bw"><div class="bf" style="width:{{ metrics.sensitivity }}%"></div></div></div>
+      <div class="m-tile"><div class="val">{{ metrics.specificity }}%</div><div class="lbl">Specificity</div><div class="bw"><div class="bf" style="width:{{ metrics.specificity }}%"></div></div></div>
+    </div>
+
+    <!-- ══ COMPARISON TABLE ══ -->
+    <div class="g-card">
+      <p class="sec-title">All Models — Comparison</p>
+      <div style="overflow-x:auto;">
+        <table class="cmp-table">
+          <thead><tr>
+            <th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th>
+            <th>F1</th><th>Sensitivity</th><th>Specificity</th><th>Time</th>
+          </tr></thead>
+          <tbody>
+            {% for name, m in metrics.all_models.items() %}
+            <tr {% if name==metrics.best_model %}class="best-row"{% endif %}>
+              <td>{{ m.short }}{% if name==metrics.best_model %}<span class="badge-best">BEST</span>{% endif %}</td>
+              <td>{{ m.accuracy }}%</td><td>{{ m.precision }}%</td><td>{{ m.recall }}%</td>
+              <td>{{ m.f1 }}%</td><td>{{ m.sensitivity }}%</td><td>{{ m.specificity }}%</td>
+              <td>{{ m.train_time }}s</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ CHARTS ══ -->
+    <div class="two-col">
+      <div class="chart-card"><p class="sec-title">Accuracy Comparison</p><canvas id="accChart"></canvas></div>
+      <div class="chart-card"><p class="sec-title">F1 Score Comparison</p><canvas id="f1Chart"></canvas></div>
+    </div>
+    <div class="chart-card"><p class="sec-title">All Metrics — All Models</p><canvas id="groupedChart" style="max-height:320px;"></canvas></div>
+    <div class="two-col">
+      <div class="chart-card"><p class="sec-title">Best Model Radar</p><canvas id="radarChart"></canvas></div>
+      <div class="chart-card"><p class="sec-title">Training Time</p><canvas id="timeChart"></canvas></div>
+    </div>
+    <div class="two-col">
+      <div class="chart-card"><p class="sec-title">Dataset Distribution</p><canvas id="pieChart"></canvas></div>
+      <div class="chart-card"><p class="sec-title">Train / Test Split</p><canvas id="splitChart"></canvas></div>
+    </div>
+
+    <!-- ══ CONFUSION MATRIX ══ -->
+    <div class="g-card">
+      <p class="sec-title" style="text-align:center;margin-bottom:14px;">Confusion Matrix — {{ metrics.best_short }}</p>
+      <div class="cm-axis"><span>Predicted: Forged</span><span>Predicted: Original</span></div>
+      <div class="cm-grid">
+        <div class="cm-cell tn"><div class="num">{{ metrics.cm.TN }}</div><div class="tag">True Negative</div></div>
+        <div class="cm-cell fp"><div class="num">{{ metrics.cm.FP }}</div><div class="tag">False Positive</div></div>
+        <div class="cm-cell fn"><div class="num">{{ metrics.cm.FN }}</div><div class="tag">False Negative</div></div>
+        <div class="cm-cell tp"><div class="num">{{ metrics.cm.TP }}</div><div class="tag">True Positive</div></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px;font-size:11px;color:rgba(255,255,255,.38);">
+        <span><span style="color:#60a5fa;">■</span> TN — Forged correctly identified</span>
+        <span><span style="color:#4ade80;">■</span> TP — Original correctly identified</span>
+        <span><span style="color:#f87171;">■</span> FP — Forged called Original</span>
+        <span><span style="color:#fbbf24;">■</span> FN — Original called Forged</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles-slim@2.12.0/tsparticles.slim.bundle.min.js"></script>
+  <script>
+    tsParticles.load("particles-bg",{fullScreen:{enable:false},background:{color:{value:"transparent"}},fpsLimit:60,
+      particles:{number:{value:140,density:{enable:true,area:900}},color:{value:["#ffffff","#c96287","#7c3aed","#60a5fa","#34d399"]},
+        shape:{type:"circle"},opacity:{value:{min:.08,max:.7},animation:{enable:true,speed:1,sync:false}},
+        size:{value:{min:.5,max:2.2}},move:{enable:true,speed:{min:.1,max:.55},random:true,outModes:{default:"out"}},
+        twinkle:{particles:{enable:true,frequency:.05,opacity:1}}},
+      interactivity:{events:{onHover:{enable:true,mode:"bubble"}},modes:{bubble:{distance:120,size:4,duration:2,opacity:.8}}},
+      detectRetina:true});
+  </script>
+  <script>
+    const BEST={accuracy:{{metrics.accuracy}},precision:{{metrics.precision}},recall:{{metrics.recall}},
+      f1:{{metrics.f1}},sensitivity:{{metrics.sensitivity}},specificity:{{metrics.specificity}},
+      original:{{metrics.original_count}},forged:{{metrics.forged_count}},
+      train:{{metrics.train_samples}},test:{{metrics.test_samples}}};
+    const ALL={{metrics.all_models|tojson}};
+    const MN=Object.keys(ALL),SN=MN.map(n=>ALL[n].short),BN="{{metrics.best_model}}";
+    Chart.defaults.color='rgba(255,255,255,0.65)';Chart.defaults.font.family="'DM Sans',sans-serif";
+    const GRID='rgba(255,255,255,0.07)';
+    const COLS=['rgba(201,98,135,.85)','rgba(96,165,250,.85)','rgba(74,222,128,.85)','rgba(251,191,36,.85)','rgba(167,139,250,.85)','rgba(52,211,153,.85)'];
+    const BC=SN.map((s,i)=>MN[i]===BN?'rgba(201,98,135,1)':COLS[i%COLS.length]);
+    new Chart(document.getElementById('accChart'),{type:'bar',data:{labels:SN,datasets:[{data:MN.map(n=>ALL[n].accuracy),backgroundColor:BC,borderRadius:8,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,grid:{color:GRID},ticks:{callback:v=>v+'%'}},x:{grid:{color:GRID}}}}});
+    new Chart(document.getElementById('f1Chart'),{type:'bar',data:{labels:SN,datasets:[{data:MN.map(n=>ALL[n].f1),backgroundColor:BC,borderRadius:8,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,grid:{color:GRID},ticks:{callback:v=>v+'%'}},x:{grid:{color:GRID}}}}});
+    new Chart(document.getElementById('groupedChart'),{type:'bar',data:{labels:SN,datasets:['accuracy','precision','recall','f1','sensitivity','specificity'].map((k,i)=>({label:['Accuracy','Precision','Recall','F1','Sensitivity','Specificity'][i],data:MN.map(n=>ALL[n][k]),backgroundColor:COLS[i%COLS.length],borderRadius:4,borderSkipped:false}))},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{padding:12,usePointStyle:true,pointStyleWidth:10}}},scales:{y:{min:0,max:100,grid:{color:GRID},ticks:{callback:v=>v+'%'}},x:{grid:{color:GRID}}}}});
+    new Chart(document.getElementById('radarChart'),{type:'radar',data:{labels:['Accuracy','Precision','Recall','F1','Sensitivity','Specificity'],datasets:[{data:[BEST.accuracy,BEST.precision,BEST.recall,BEST.f1,BEST.sensitivity,BEST.specificity],backgroundColor:'rgba(201,98,135,.18)',borderColor:'rgba(201,98,135,.9)',pointBackgroundColor:'#c96287',pointRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{r:{min:0,max:100,grid:{color:GRID},angleLines:{color:GRID},ticks:{display:false},pointLabels:{font:{size:10}}}}}});
+    new Chart(document.getElementById('timeChart'),{type:'bar',data:{labels:SN,datasets:[{data:MN.map(n=>ALL[n].train_time),backgroundColor:BC,borderRadius:8,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:GRID},ticks:{callback:v=>v+'s'}},x:{grid:{color:GRID}}}}});
+    new Chart(document.getElementById('pieChart'),{type:'doughnut',data:{labels:['Original','Forged'],datasets:[{data:[BEST.original,BEST.forged],backgroundColor:['rgba(74,222,128,.75)','rgba(248,113,113,.75)'],borderColor:['rgba(74,222,128,1)','rgba(248,113,113,1)'],borderWidth:1,hoverOffset:6}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{padding:14,usePointStyle:true}}}}});
+    new Chart(document.getElementById('splitChart'),{type:'doughnut',data:{labels:['Train','Test'],datasets:[{data:[BEST.train,BEST.test],backgroundColor:['rgba(96,165,250,.75)','rgba(167,139,250,.75)'],borderColor:['rgba(96,165,250,1)','rgba(167,139,250,1)'],borderWidth:1,hoverOffset:6}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{padding:14,usePointStyle:true}}}}});
+  </script>
+</body>
+</html>

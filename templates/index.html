@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signature Verification System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    #particles-bg {
+      position:fixed; inset:0; width:100%; height:100%; z-index:0;
+      background: radial-gradient(ellipse at 20% 50%, #1a0533 0%, #0a0a0f 50%, #001a2e 100%);
+    }
+
+    /* nav */
+    .top-nav {
+      position:fixed; top:0; left:0; right:0; z-index:100;
+      display:flex; justify-content:space-between; align-items:center;
+      padding:14px 28px;
+      background:rgba(0,0,0,.35);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(255,255,255,.07);
+    }
+    .nav-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; color:white; letter-spacing:-.01em; }
+    .nav-right { display:flex; gap:10px; align-items:center; }
+    .nav-user  { font-size:13px; color:rgba(255,255,255,.55); }
+
+    body { padding-top:70px; }
+
+    /* tabs */
+    .tab-row {
+      display:flex; gap:0; background:rgba(255,255,255,.06);
+      border-radius:12px; padding:4px; margin-bottom:20px;
+    }
+    .tab-btn {
+      flex:1; padding:10px; border:none; border-radius:9px;
+      background:transparent; color:rgba(255,255,255,.45);
+      font-family:'Syne',sans-serif; font-size:13px; font-weight:700;
+      cursor:pointer; transition:.2s;
+    }
+    .tab-btn.active {
+      background:rgba(201,98,135,.25); color:white;
+      border:1px solid rgba(201,98,135,.35);
+    }
+
+    .tab-pane { display:none; }
+    .tab-pane.active { display:block; }
+
+    /* camera */
+    #camera-feed { width:100%; border-radius:12px; border:1px solid rgba(255,255,255,.1); display:block; }
+    #canvas-snap { display:none; }
+    .cam-btn { width:100%; margin-top:10px; }
+
+    /* flash */
+    .flash { padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:13px; font-weight:500; }
+    .flash.success { background:rgba(74,222,128,.12); border:1px solid rgba(74,222,128,.3); color:#4ade80; }
+    .flash.error   { background:rgba(248,113,113,.12); border:1px solid rgba(248,113,113,.3); color:#f87171; }
+
+    /* API box */
+    .api-box {
+      background:rgba(0,0,0,.4);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:12px;
+      padding:16px;
+      font-family:monospace;
+      font-size:12px;
+      color:rgba(255,255,255,.6);
+      margin-top:8px;
+      line-height:2;
+      overflow-x:auto;
+    }
+    .api-box .method { color:#c96287; font-weight:700; }
+    .api-box .url    { color:#60a5fa; }
+    .api-box .note   { color:rgba(255,255,255,.3); }
+
+    .sec-title {
+      font-family:'Syne',sans-serif; font-size:.65rem; font-weight:700;
+      letter-spacing:.13em; text-transform:uppercase;
+      color:rgba(255,255,255,.3); margin-bottom:6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="particles-bg"></div>
+
+  <!-- TOP NAV -->
+  <nav class="top-nav">
+    <span class="nav-logo">⬡ SigVerify</span>
+    <div class="nav-right">
+      {% if user %}
+        <span class="nav-user">👤 {{ user.name }}</span>
+        <a href="/history" class="btn btn-outline-light" style="padding:6px 16px;font-size:13px;">History</a>
+        <a href="/logout"  class="btn btn-outline-light" style="padding:6px 16px;font-size:13px;">Logout</a>
+      {% else %}
+        <a href="/login"  class="btn btn-outline-light" style="padding:6px 14px;font-size:13px;">Login</a>
+        <a href="/signup" class="btn btn-outline-light" style="padding:6px 14px;font-size:13px;">Signup</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <!-- MAIN CARD -->
+  <div class="card-wrapper">
+    <div class="card">
+
+      <h1>Signature Verification</h1>
+
+      <div class="status-dot">
+        <span class="ping-wrapper">
+          <span class="ping-ring"></span>
+          <span class="ping-dot"></span>
+        </span>
+        Model Ready
+      </div>
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="flash {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <!-- Tabs -->
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab('upload', this)">📁 Upload File</button>
+        <button class="tab-btn"        onclick="switchTab('camera', this)">📷 Camera</button>
+      </div>
+
+      <!-- Tab: Upload -->
+      <div id="tab-upload" class="tab-pane active">
+        <div class="upload-box">
+          <form action="/predict" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" class="form-control" accept="image/*" required>
+            <br>
+            <button type="submit">Upload &amp; Verify</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Tab: Camera -->
+      <div id="tab-camera" class="tab-pane">
+        <video id="camera-feed" autoplay playsinline></video>
+        <canvas id="canvas-snap"></canvas>
+        <button class="gradient-button cam-btn" onclick="startCamera()" id="btn-start">▶ Start Camera</button>
+        <button class="gradient-button cam-btn" onclick="snapPhoto()"  id="btn-snap" style="display:none;">📸 Capture &amp; Verify</button>
+        <form id="cam-form" action="/predict" method="post" enctype="multipart/form-data" style="display:none;">
+          <input type="file" name="file" id="cam-file">
+        </form>
+      </div>
+
+      <div class="divider">or</div>
+
+      <!-- REST API section -->
+      <p class="sec-title">REST API</p>
+      <div class="api-box">
+        <span class="method">POST</span> <span class="url">/api/predict</span><br>
+        <span class="note"># multipart file upload</span><br>
+        <span class="method">GET&nbsp;</span> <span class="url">/api/metrics</span><br>
+        <span class="method">GET&nbsp;</span> <span class="url">/api/history</span> <span class="note">(login required)</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- tsParticles -->
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles-slim@2.12.0/tsparticles.slim.bundle.min.js"></script>
+  <script>
+    tsParticles.load("particles-bg", {
+      fullScreen: { enable: false },
+      background: { color: { value: "transparent" } },
+      fpsLimit: 60,
+      particles: {
+        number: { value: 160, density: { enable: true, area: 800 } },
+        color: { value: ["#ffffff", "#c96287", "#7c3aed", "#60a5fa", "#34d399"] },
+        shape: { type: "circle" },
+        opacity: {
+          value: { min: 0.1, max: 0.8 },
+          animation: { enable: true, speed: 1.2, sync: false }
+        },
+        size: { value: { min: 0.5, max: 2.5 } },
+        move: {
+          enable: true, speed: { min: 0.2, max: 0.8 },
+          direction: "none", random: true, straight: false,
+          outModes: { default: "out" }
+        },
+        twinkle: { particles: { enable: true, frequency: 0.05, opacity: 1 } }
+      },
+      interactivity: {
+        events: {
+          onHover: { enable: true, mode: "bubble" },
+          onClick:  { enable: true, mode: "push"   }
+        },
+        modes: {
+          bubble: { distance: 120, size: 4, duration: 2, opacity: 0.8 },
+          push:   { quantity: 3 }
+        }
+      },
+      detectRetina: true
+    });
+
+    // ── Tab switching ──────────────────────────────────────────────────────
+    function switchTab(name, btn) {
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      btn.classList.add('active');
+      if (name !== 'camera') stopCamera();
+    }
+
+    // ── Camera ─────────────────────────────────────────────────────────────
+    let stream = null;
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        document.getElementById('camera-feed').srcObject = stream;
+        document.getElementById('btn-start').style.display = 'none';
+        document.getElementById('btn-snap').style.display  = 'block';
+      } catch(e) {
+        alert('Camera access denied: ' + e.message);
+      }
+    }
+
+    function stopCamera() {
+      if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+      document.getElementById('btn-start').style.display = 'block';
+      document.getElementById('btn-snap').style.display  = 'none';
+    }
+
+    function snapPhoto() {
+      const video  = document.getElementById('camera-feed');
+      const canvas = document.getElementById('canvas-snap');
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      canvas.toBlob(blob => {
+        const file = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
+        const dt   = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('cam-file').files = dt.files;
+        stopCamera();
+        document.getElementById('cam-form').submit();
+      }, 'image/jpeg', 0.92);
+    }
+  </script>
+
+</body>
+</html>

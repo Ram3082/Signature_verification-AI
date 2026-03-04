@@ -1,0 +1,408 @@
+/* ================================================
+   GOOGLE FONTS
+   ================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+
+/* ================================================
+   CSS CUSTOM PROPERTIES FOR GRADIENT BUTTON
+   ================================================ */
+@property --pos-x      { syntax: '<percentage>'; initial-value: 11.14%;               inherits: false; }
+@property --pos-y      { syntax: '<percentage>'; initial-value: 140%;                 inherits: false; }
+@property --spread-x   { syntax: '<percentage>'; initial-value: 150%;                 inherits: false; }
+@property --spread-y   { syntax: '<percentage>'; initial-value: 180.06%;              inherits: false; }
+@property --color-1    { syntax: '<color>';      initial-value: #000;                 inherits: false; }
+@property --color-2    { syntax: '<color>';      initial-value: #08012c;              inherits: false; }
+@property --color-3    { syntax: '<color>';      initial-value: #4e1e40;              inherits: false; }
+@property --color-4    { syntax: '<color>';      initial-value: #70464e;              inherits: false; }
+@property --color-5    { syntax: '<color>';      initial-value: #88394c;              inherits: false; }
+@property --b-angle    { syntax: '<angle>';      initial-value: 20deg;                inherits: true;  }
+@property --b-color-1  { syntax: '<color>';      initial-value: hsla(340,75%,60%,.2); inherits: true;  }
+@property --b-color-2  { syntax: '<color>';      initial-value: hsla(340,75%,40%,.75);inherits: true;  }
+@property --stop-1     { syntax: '<percentage>'; initial-value: 37.35%;               inherits: false; }
+@property --stop-2     { syntax: '<percentage>'; initial-value: 61.36%;               inherits: false; }
+@property --stop-3     { syntax: '<percentage>'; initial-value: 78.42%;               inherits: false; }
+@property --stop-4     { syntax: '<percentage>'; initial-value: 89.52%;               inherits: false; }
+@property --stop-5     { syntax: '<percentage>'; initial-value: 100%;                 inherits: false; }
+
+/* ================================================
+   RESET & BASE
+   ================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #07080d;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ================================================
+   WEBGL CANVAS  (full-screen background)
+   ================================================ */
+#webgl-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+}
+
+/* ================================================
+   CARD WRAPPER  (sits above canvas)
+   ================================================ */
+.card-wrapper {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 520px;
+  padding: 16px;
+}
+
+/* ================================================
+   CARD
+   ================================================ */
+.card {
+  background: rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: white;
+  padding: 44px 40px 36px;
+  border-radius: 22px;
+  width: 100%;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 30px 60px rgba(0,0,0,0.65),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  animation: cardIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ================================================
+   HEADINGS
+   ================================================ */
+h1, h2, h3 {
+  font-family: 'Syne', sans-serif;
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  margin-bottom: 24px;
+  background: linear-gradient(160deg, #ffffff 30%, rgba(255,255,255,0.45) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+h1 { font-size: 2rem;   }
+h2 { font-size: 1.65rem;}
+h3 { font-size: 1.35rem;}
+
+/* ================================================
+   LABELS
+   ================================================ */
+label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+  margin-bottom: 4px;
+}
+
+/* ================================================
+   INPUT FIELDS
+   ================================================ */
+input[type="file"],
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 12px 15px;
+  margin-top: 4px;
+  margin-bottom: 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  color: white;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.25s, background 0.25s;
+}
+input::placeholder { color: rgba(255,255,255,0.28); }
+input:focus {
+  border-color: rgba(201, 98, 135, 0.55);
+  background: rgba(255,255,255,0.09);
+}
+input[type="file"] { cursor: pointer; padding: 10px 15px; }
+
+/* Bootstrap form-control override so it inherits our style */
+.form-control {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  color: white !important;
+  border-radius: 10px !important;
+  font-family: 'DM Sans', sans-serif !important;
+  padding: 12px 15px !important;
+  margin-bottom: 16px !important;
+  transition: border-color 0.25s, background 0.25s !important;
+}
+.form-control::placeholder { color: rgba(255,255,255,0.28) !important; }
+.form-control:focus {
+  border-color: rgba(201,98,135,0.55) !important;
+  background: rgba(255,255,255,0.09) !important;
+  box-shadow: none !important;
+}
+
+/* ================================================
+   GRADIENT BUTTON  (primary action)
+   ================================================ */
+.gradient-button,
+button.btn-primary,
+button.btn-success,
+button[type="submit"] {
+  position: relative;
+  appearance: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px 36px;
+  border: none;
+  border-radius: 11px;
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: white !important;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  margin-top: 4px;
+
+  background: radial-gradient(
+    var(--spread-x) var(--spread-y) at var(--pos-x) var(--pos-y),
+    var(--color-1) var(--stop-1),
+    var(--color-2) var(--stop-2),
+    var(--color-3) var(--stop-3),
+    var(--color-4) var(--stop-4),
+    var(--color-5) var(--stop-5)
+  );
+
+  transition:
+    --pos-x .5s, --pos-y .5s,
+    --spread-x .5s, --spread-y .5s,
+    --color-1 .5s, --color-2 .5s, --color-3 .5s, --color-4 .5s, --color-5 .5s,
+    --b-angle .5s, --b-color-1 .5s, --b-color-2 .5s,
+    --stop-1 .5s, --stop-2 .5s, --stop-3 .5s, --stop-4 .5s, --stop-5 .5s,
+    transform .2s;
+}
+
+.gradient-button::before,
+button.btn-primary::before,
+button.btn-success::before,
+button[type="submit"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(var(--b-angle), var(--b-color-1), var(--b-color-2));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: destination-out;
+  pointer-events: none;
+}
+
+.gradient-button:hover,
+button.btn-primary:hover,
+button.btn-success:hover,
+button[type="submit"]:hover {
+  --pos-x: 0%; --pos-y: 91.51%;
+  --spread-x: 120.24%; --spread-y: 103.18%;
+  --color-1: #c96287; --color-2: #c66c64;
+  --color-3: #cc7d23; --color-4: #37140a; --color-5: #000;
+  --b-angle: 190deg;
+  --b-color-1: hsla(340,78%,90%,.1);
+  --b-color-2: hsla(340,75%,90%,.6);
+  --stop-1: 0%; --stop-2: 8.8%;
+  --stop-3: 21.44%; --stop-4: 71.34%; --stop-5: 85.76%;
+  transform: translateY(-1px);
+  color: white !important;
+  text-decoration: none;
+}
+
+.gradient-button:active,
+button.btn-primary:active,
+button.btn-success:active,
+button[type="submit"]:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+/* ================================================
+   OUTLINE / SECONDARY BUTTON  (liquid glass style)
+   ================================================ */
+.btn-outline-light,
+.btn-secondary,
+a.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 28px;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  background: rgba(255,255,255,0.05) !important;
+  color: rgba(255,255,255,0.75) !important;
+  font-family: 'Syne', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  text-decoration: none !important;
+  transition: transform 0.3s, border-color 0.3s, background 0.3s, color 0.3s !important;
+  box-shadow:
+    inset 1px 1px 1px rgba(255,255,255,0.1),
+    inset -1px -1px 1px rgba(255,255,255,0.06),
+    0 4px 16px rgba(0,0,0,0.25) !important;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.btn-outline-light:hover,
+.btn-secondary:hover,
+a.btn:hover {
+  transform: scale(1.03);
+  border-color: rgba(255,255,255,0.32) !important;
+  background: rgba(255,255,255,0.10) !important;
+  color: white !important;
+}
+
+.btn-outline-light:active,
+.btn-secondary:active,
+a.btn:active {
+  transform: scale(0.97);
+}
+
+/* inline side-by-side buttons on index page */
+.btn-outline-light.me-2 {
+  width: calc(50% - 6px);
+  margin-right: 8px !important;
+  margin-top: 0;
+}
+.btn-outline-light + .btn-outline-light {
+  width: calc(50% - 6px);
+  margin-top: 0;
+}
+
+/* ================================================
+   UPLOAD BOX
+   ================================================ */
+.upload-box {
+  border: 2px dashed rgba(255,255,255,0.15);
+  padding: 28px 20px;
+  text-align: center;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  transition: border-color 0.25s, background 0.25s;
+  margin-bottom: 8px;
+}
+.upload-box:hover {
+  border-color: rgba(201,98,135,0.45);
+  background: rgba(201,98,135,0.04);
+}
+
+/* ================================================
+   RESULT TEXT
+   ================================================ */
+.result {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.09);
+  letter-spacing: -0.01em;
+}
+
+/* ================================================
+   STATUS DOT  (pulsing green dot)
+   ================================================ */
+.status-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 0 0 20px;
+  font-size: 12px;
+  color: #4ade80;
+  font-weight: 500;
+}
+.ping-wrapper {
+  position: relative;
+  width: 12px; height: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.ping-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #4ade80;
+  opacity: 0.75;
+  animation: ping 1.4s cubic-bezier(0,0,.2,1) infinite;
+}
+.ping-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  position: relative; z-index: 1;
+}
+
+/* ================================================
+   DIVIDER
+   ================================================ */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0 18px;
+  color: rgba(255,255,255,0.22);
+  font-size: 12px;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.10);
+}
+
+/* ================================================
+   RESULT IMAGE
+   ================================================ */
+.result-image {
+  width: 100%;
+  max-width: 260px;
+  display: block;
+  margin: 12px auto 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+/* 
+   ANIMATIONS
+   ================================================ */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(28px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+@keyframes ping {
+  75%, 100% { transform: scale(2.1); opacity: 0; }
+}

@@ -1,0 +1,121 @@
+{
+  "model_type": "CNN",
+  "best_model": "CNN",
+  "best_short": "CNN",
+  "accuracy": 50.0,
+  "precision": 25.0,
+  "recall": 50.0,
+  "f1": 33.33,
+  "sensitivity": 0.0,
+  "specificity": 100.0,
+  "cm": {
+    "TN": 1,
+    "FP": 0,
+    "FN": 1,
+    "TP": 0
+  },
+  "total_samples": 10,
+  "train_samples": 8,
+  "test_samples": 2,
+  "forged_count": 5,
+  "original_count": 5,
+  "cnn_available": true,
+  "all_models": {
+    "Multinomial NB": {
+      "short": "MNBC",
+      "accuracy": 50.0,
+      "precision": 25.0,
+      "recall": 50.0,
+      "f1": 33.33,
+      "sensitivity": 0.0,
+      "specificity": 100.0,
+      "train_time": 0.005,
+      "cm": {
+        "TN": 1,
+        "FP": 0,
+        "FN": 1,
+        "TP": 0
+      }
+    },
+    "Bernoulli NB": {
+      "short": "BNBC",
+      "accuracy": 50.0,
+      "precision": 25.0,
+      "recall": 50.0,
+      "f1": 33.33,
+      "sensitivity": 0.0,
+      "specificity": 100.0,
+      "train_time": 0.003,
+      "cm": {
+        "TN": 1,
+        "FP": 0,
+        "FN": 1,
+        "TP": 0
+      }
+    },
+    "Logistic Regression": {
+      "short": "LRC",
+      "accuracy": 50.0,
+      "precision": 25.0,
+      "recall": 50.0,
+      "f1": 33.33,
+      "sensitivity": 0.0,
+      "specificity": 100.0,
+      "train_time": 0.269,
+      "cm": {
+        "TN": 1,
+        "FP": 0,
+        "FN": 1,
+        "TP": 0
+      }
+    },
+    "SGD Classifier": {
+      "short": "SGDC",
+      "accuracy": 50.0,
+      "precision": 25.0,
+      "recall": 50.0,
+      "f1": 33.33,
+      "sensitivity": 0.0,
+      "specificity": 100.0,
+      "train_time": 0.009,
+      "cm": {
+        "TN": 1,
+        "FP": 0,
+        "FN": 1,
+        "TP": 0
+      }
+    },
+    "Random Forest": {
+      "short": "RFC",
+      "accuracy": 50.0,
+      "precision": 25.0,
+      "recall": 50.0,
+      "f1": 33.33,
+      "sensitivity": 0.0,
+      "specificity": 100.0,
+      "train_time": 0.154,
+      "cm": {
+        "TN": 1,
+        "FP": 0,
+        "FN": 1,
+        "TP": 0
+      }
+    },
+    "CNN": {
+      "short": "CNN",
+      "accuracy": 50.0,
+      "precision": 25.0,
+      "recall": 50.0,
+      "f1": 33.33,
+      "sensitivity": 0.0,
+      "specificity": 100.0,
+      "train_time": 8.79,
+      "cm": {
+        "TN": 1,
+        "FP": 0,
+        "FN": 1,
+        "TP": 0
+      }
+    }
+  }
+}
