@@ -28,26 +28,29 @@ except FileNotFoundError:
         "cnn_available":False,"all_models":{}
     }
 
-CNN_AVAILABLE = METRICS.get("cnn_available", False)
+# ── Try loading CNN (skip silently if out of memory) ──────────────────────────
+CNN_AVAILABLE = False
+cnn_model     = None
 
-# ── Load CNN model ────────────────────────────────────────────────────────────
-cnn_model = None
-if CNN_AVAILABLE:
-    try:
-        import tensorflow as tf
-        cnn_model = tf.keras.models.load_model("cnn_model.keras")
+try:
+    import tensorflow as tf
+    # Only load if cnn_model.keras exists
+    if os.path.exists("cnn_model.keras"):
+        cnn_model     = tf.keras.models.load_model("cnn_model.keras")
+        CNN_AVAILABLE = True
         print("✅ CNN model loaded")
-    except Exception as e:
-        print(f"⚠️  CNN load failed: {e}")
-        CNN_AVAILABLE = False
+    else:
+        print("⚠️  cnn_model.keras not found — using classic model")
+except Exception as e:
+    print(f"⚠️  TensorFlow not available ({e}) — using classic model only")
 
-# ── Load classic model as fallback ────────────────────────────────────────────
+# ── Load classic model ────────────────────────────────────────────────────────
 classic_model = None
 try:
-    classic_model = pickle.load(open("model.pkl","rb"))
+    classic_model = pickle.load(open("model.pkl", "rb"))
     print("✅ Classic model loaded")
-except:
-    pass
+except Exception as e:
+    print(f"❌ Classic model load failed: {e}")
 
 # ── Database ──────────────────────────────────────────────────────────────────
 def get_db():
@@ -89,20 +92,14 @@ def login_required(f):
     return decorated
 
 # ═════════════════════════════════════════════════════════════════════════════
-#  GRAD-CAM
+#  GRAD-CAM (only runs if CNN loaded successfully)
 # ═════════════════════════════════════════════════════════════════════════════
 def generate_gradcam(img_array, save_path):
-    """
-    Generate Grad-CAM heatmap overlay for CNN predictions.
-    img_array: float32 numpy (64,64,3) normalised 0-1
-    Returns: path to saved heatmap image, or None
-    """
     if not CNN_AVAILABLE or cnn_model is None:
         return None
     try:
         import tensorflow as tf
 
-        # Find last Conv2D layer
         last_conv = None
         for layer in reversed(cnn_model.layers):
             if isinstance(layer, tf.keras.layers.Conv2D):
@@ -115,36 +112,27 @@ def generate_gradcam(img_array, save_path):
             inputs  = cnn_model.inputs,
             outputs = [cnn_model.get_layer(last_conv).output, cnn_model.output]
         )
-
         img_tensor = tf.cast(img_array[np.newaxis, ...], tf.float32)
 
         with tf.GradientTape() as tape:
             conv_outputs, predictions = grad_model(img_tensor)
-            pred_index = tf.argmax(predictions[0])
+            pred_index  = tf.argmax(predictions[0])
             class_score = predictions[:, pred_index]
 
-        grads       = tape.gradient(class_score, conv_outputs)
-        pooled_grads= tf.reduce_mean(grads, axis=(0,1,2))
-        conv_out    = conv_outputs[0]
-        heatmap     = conv_out @ pooled_grads[..., tf.newaxis]
-        heatmap     = tf.squeeze(heatmap).numpy()
-        heatmap     = np.maximum(heatmap, 0)
-
+        grads        = tape.gradient(class_score, conv_outputs)
+        pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+        conv_out     = conv_outputs[0]
+        heatmap      = conv_out @ pooled_grads[..., tf.newaxis]
+        heatmap      = tf.squeeze(heatmap).numpy()
+        heatmap      = np.maximum(heatmap, 0)
         if heatmap.max() > 0:
             heatmap = heatmap / heatmap.max()
 
-        # Resize heatmap to original image size
-        orig_img = (img_array * 255).astype(np.uint8)
+        orig_img        = (img_array * 255).astype(np.uint8)
         heatmap_resized = cv2.resize(heatmap, (64, 64))
-        heatmap_colored = cv2.applyColorMap(
-            np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
-
-        # Overlay
-        overlay = cv2.addWeighted(orig_img, 0.6, heatmap_colored, 0.4, 0)
-
-        # Save larger version for display
-        overlay_large = cv2.resize(overlay, (256, 256),
-                                   interpolation=cv2.INTER_NEAREST)
+        heatmap_colored = cv2.applyColorMap(np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
+        overlay         = cv2.addWeighted(orig_img, 0.6, heatmap_colored, 0.4, 0)
+        overlay_large   = cv2.resize(overlay, (256, 256), interpolation=cv2.INTER_NEAREST)
         cv2.imwrite(save_path, overlay_large)
         return save_path
 
@@ -153,34 +141,28 @@ def generate_gradcam(img_array, save_path):
         return None
 
 # ═════════════════════════════════════════════════════════════════════════════
-#  PREDICTION HELPER
+#  PREDICTION
 # ═════════════════════════════════════════════════════════════════════════════
 def run_prediction(img_bgr, filename="upload"):
-    """
-    Returns: result_str, result_cls, confidence, gradcam_path, model_name
-    """
-    img_resized = cv2.resize(img_bgr, (64, 64))
-    img_norm    = img_resized.astype("float32") / 255.0
-
+    img_resized  = cv2.resize(img_bgr, (64, 64))
+    img_norm     = img_resized.astype("float32") / 255.0
     gradcam_path = None
-    model_name   = METRICS.get("best_model", "RFC")
 
     if CNN_AVAILABLE and cnn_model is not None:
-        proba = cnn_model.predict(img_norm[np.newaxis,...], verbose=0)[0]
-        pred  = int(np.argmax(proba))
-        conf  = round(float(np.max(proba)) * 100, 1)
+        proba      = cnn_model.predict(img_norm[np.newaxis, ...], verbose=0)[0]
+        pred       = int(np.argmax(proba))
+        conf       = round(float(np.max(proba)) * 100, 1)
         model_name = "CNN"
-
-        # Generate Grad-CAM
-        gc_filename = f"gradcam_{os.path.splitext(filename)[0]}_{int(datetime.now().timestamp())}.jpg"
-        gc_path     = os.path.join("static/gradcam", gc_filename)
+        gc_fname   = f"gradcam_{os.path.splitext(filename)[0]}_{int(datetime.now().timestamp())}.jpg"
+        gc_path    = os.path.join("static/gradcam", gc_fname)
         gradcam_path = generate_gradcam(img_norm, gc_path)
 
     elif classic_model is not None:
-        flat  = img_resized.reshape(1, -1)
-        pred  = int(classic_model.predict(flat)[0])
-        proba = classic_model.predict_proba(flat)[0]
-        conf  = round(float(np.max(proba)) * 100, 1)
+        flat       = img_resized.reshape(1, -1)
+        pred       = int(classic_model.predict(flat)[0])
+        proba      = classic_model.predict_proba(flat)[0]
+        conf       = round(float(np.max(proba)) * 100, 1)
+        model_name = METRICS.get("best_model", "RFC")
     else:
         return "Unknown", "forged", 0.0, None, "None"
 
@@ -189,7 +171,7 @@ def run_prediction(img_bgr, filename="upload"):
     return "Forged Signature", "forged", conf, gradcam_path, model_name
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  PAGE ROUTES
+#  ROUTES
 # ══════════════════════════════════════════════════════════════════════════════
 @app.route("/")
 def home():
@@ -247,7 +229,6 @@ def predict():
     file.save(filepath)
     img = cv2.imread(filepath)
     result, result_cls, confidence, gradcam_path, model_name = run_prediction(img, file.filename)
-
     if "user_id" in session:
         with get_db() as conn:
             conn.execute(
@@ -255,7 +236,6 @@ def predict():
                 (session["user_id"], file.filename, result,
                  confidence, model_name, gradcam_path or "")
             )
-
     return render_template("result.html",
         prediction   = result,
         result_cls   = result_cls,
@@ -264,7 +244,7 @@ def predict():
         gradcam_path = gradcam_path,
         model_name   = model_name,
         metrics      = METRICS,
-        user_name    = session.get("user_name","Guest"),
+        user_name    = session.get("user_name", "Guest"),
     )
 
 @app.route("/history")
@@ -278,9 +258,7 @@ def history():
     return render_template("history.html", history=rows,
                            user_name=session.get("user_name",""))
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  REST API
-# ══════════════════════════════════════════════════════════════════════════════
+# ── REST API ──────────────────────────────────────────────────────────────────
 @app.route("/api/predict", methods=["POST"])
 def api_predict():
     try:

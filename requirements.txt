@@ -1,7 +1,6 @@
-flask
-opencv-python-headless
-numpy
-scikit-learn
-werkzeug
-tensorflow
-gunicorn
+flask==3.0.3
+opencv-python-headless==4.9.0.80
+numpy==1.26.4
+scikit-learn==1.4.2
+werkzeug==3.0.3
+gunicorn==22.0.0
